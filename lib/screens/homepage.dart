@@ -3,7 +3,9 @@ import 'package:flutterappparctice/screens/homescreen/favouritpage.dart';
 import 'package:flutterappparctice/screens/homescreen/popularpage.dart';
 import 'package:flutterappparctice/screens/homescreen/whatspage.dart';
 import 'package:flutterappparctice/shared_UI/drawercontent.dart';
-import 'package:flutterappparctice/api/authors_api.dart';
+
+
+
 // ignore: camel_case_types
 class homescreen extends StatefulWidget {
   @override
@@ -18,8 +20,6 @@ class _homescreenState extends State<homescreen> with SingleTickerProviderStateM
 
   //
   TabController _tabController;
-  AuthorsAPI authorsAPI =new AuthorsAPI();
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +34,6 @@ class _homescreenState extends State<homescreen> with SingleTickerProviderStateM
   }
   @override
   Widget build(BuildContext context) {
-    authorsAPI.fetchAllAuthors();
 
     return Scaffold(
       appBar: AppBar(

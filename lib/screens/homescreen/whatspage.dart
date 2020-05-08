@@ -1,4 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterappparctice/api/posts.dart';
+import 'package:flutterappparctice/api/refactoryCode.dart';
+import 'package:flutterappparctice/models/post.dart';
+import 'dart:async';
+import 'package:flutterappparctice/utilities/data_Utilties.dart';
 
 class whatspagecontent extends StatefulWidget {
   @override
@@ -6,6 +12,8 @@ class whatspagecontent extends StatefulWidget {
 }
 
 class _whatspagecontentState extends State<whatspagecontent> {
+  PostsAPII postsAPI = PostsAPII();
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -13,6 +21,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
         children: <Widget>[
           _drawheader(),
           _drawTopStories(),
+          _drawRecentUpdate(),
         ],
       ),
     );
@@ -61,34 +70,93 @@ class _whatspagecontentState extends State<whatspagecontent> {
           Padding(
             padding: EdgeInsets.all(0.8),
             child: Card(
-              child: Column(
-                children: <Widget>[
-                  _drawSingleRow(),
-                  _drawDivider(),
-                  _drawSingleRow(),
-                  _drawDivider(),
-                  _drawSingleRow(),
-                ],
+              child: FutureBuilder(
+                future: postsAPI.fechPostbyCateforyid("1"),
+                // ignore: missing_return
+                builder: (context, AsyncSnapshot snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                      return connectionError();
+                      break;
+                    case ConnectionState.waiting:
+                      return loading();
+                      break;
+                    case ConnectionState.active:
+                      return loading();
+                      break;
+                    case ConnectionState.done:
+                      if (snapshot.error != null) {
+                        return error(snapshot.error);
+                      } else {
+                        if (snapshot.hasData) {
+                          List<Post> posts = snapshot.data;
+                          if (posts.length >= 3) {
+                            Post post1 = snapshot.data[0];
+                            Post post2 = snapshot.data[1];
+                            Post post3 = snapshot.data[2];
+                            return Column(
+                              children: <Widget>[
+                                _drawSingleRow(post1),
+                                _drawDivider(),
+                                _drawSingleRow(post2),
+                                _drawDivider(),
+                                _drawSingleRow(post3),
+                              ],
+                            );
+                          }
+                        } else {
+                          return noData();
+                        }
+                      }
+                      break;
+                  }
+                },
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                    padding: const EdgeInsets.only(left: 16, bottom: 8),
-                    child: _drawSection('Recent Update')),
-                _drawRecentUpdateCard(Colors.deepOrange),
-                _drawRecentUpdateCard(Colors.teal),
-                SizedBox(
-                  height: 48,
-                )
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _drawRecentUpdate() {
+    return Padding(
+      padding: EdgeInsets.all(8),
+      child: FutureBuilder(
+        future: postsAPI.fechPostbyCateforyid("2"),
+        // ignore: missing_return
+        builder: (context, AsyncSnapshot snapShot) {
+          switch (snapShot.connectionState) {
+            case ConnectionState.none:
+              return connectionError();
+              break;
+            case ConnectionState.waiting:
+              return loading();
+              break;
+            case ConnectionState.active:
+              return loading();
+              break;
+            case ConnectionState.done:
+              if (snapShot.hasError) {
+                return error(snapShot.error);
+              } else {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                        padding: const EdgeInsets.only(left: 16, bottom: 8),
+                        child: _drawSection('Recent Update')),
+                    _drawRecentUpdateCard(Colors.deepOrange,snapShot.data[0]),
+                    _drawRecentUpdateCard(Colors.teal,snapShot.data[1]),
+                    SizedBox(
+                      height: 48,
+                    ),
+                  ],
+                );
+              }
+              break;
+          }
+        },
       ),
     );
   }
@@ -104,31 +172,20 @@ class _whatspagecontentState extends State<whatspagecontent> {
     );
   }
 
-  Widget _drawSingleRow() {
+
+
+  Widget _drawSingleRow(Post post) {
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Row(
         children: <Widget>[
-          Container(
+          SizedBox(
             width: 125,
             height: 125,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-              image: ExactAssetImage('assets/images/Bac.JPG'),
+            child: Image.network(
+              post.featuredImage,
               fit: BoxFit.cover,
-            )),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'Mad Man',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                  ),
-                )
-              ],
-            ),
+            ), // تكدر تطبع هذا الرابط للكونسول ؟
           ),
           SizedBox(
             width: 10,
@@ -138,7 +195,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  'The World Global warnning Annual Summit',
+                  post.title,
                   maxLines: 2,
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
@@ -152,7 +209,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
                     Row(
                       children: <Widget>[
                         Icon(Icons.timer),
-                        Text('15 Min'),
+                        Text(parseHumanDateTime(post.dateWritten)),
                       ],
                     )
                   ],
@@ -173,7 +230,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
     );
   }
 
-  Widget _drawRecentUpdateCard(Color color) {
+  Widget _drawRecentUpdateCard(Color color, Post post) {
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,7 +238,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
           Container(
             decoration: BoxDecoration(
                 image: DecorationImage(
-                    image: ExactAssetImage('assets/images/Bac.JPG'),
+                    image: NetworkImage(post.featuredImage),
                     fit: BoxFit.cover)),
             width: double.infinity,
             height: MediaQuery.of(context).size.height * 0.25,
@@ -204,7 +261,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
           Padding(
             padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
             child: Text(
-              'Vettel is Ferrari Number One - Hamilton',
+              post.title,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
@@ -224,7 +281,7 @@ class _whatspagecontentState extends State<whatspagecontent> {
                   width: 4,
                 ),
                 Text(
-                  '15 Min',
+                  parseHumanDateTime(post.dateWritten),
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 13,
@@ -237,4 +294,9 @@ class _whatspagecontentState extends State<whatspagecontent> {
       ),
     );
   }
-}
+
+
+  }
+
+
+

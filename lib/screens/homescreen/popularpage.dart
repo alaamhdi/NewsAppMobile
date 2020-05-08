@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutterappparctice/api/posts.dart';
+import 'package:flutterappparctice/api/refactoryCode.dart';
+import 'dart:async';
+import 'package:flutterappparctice/models/post.dart';
+import 'package:flutterappparctice/utilities/data_Utilties.dart';
 
 class popularpagecontent extends StatefulWidget {
   @override
@@ -6,19 +11,49 @@ class popularpagecontent extends StatefulWidget {
 }
 
 class _popularpagecontentState extends State<popularpagecontent> {
+  PostsAPII postsAPI=PostsAPII();
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(itemBuilder: (context,position){
-      return Card(
-        child: _drawSingleRow(),
-      );
-    },
-      itemCount: 20,
+    return FutureBuilder(
+      future: postsAPI.fechPostbyCateforyid("3"),
+      // ignore: missing_return
+      builder: (context,AsyncSnapshot snapShot){
+        switch (snapShot.connectionState){
+
+          case ConnectionState.none:
+            return connectionError();
+            break;
+          case ConnectionState.waiting:
+            return loading();
+            break;
+          case ConnectionState.active:
+            return loading();
+            break;
+          case ConnectionState.done:
+            if(snapShot.hasError){
+              return error(snapShot.error);
+            }
+            else{
+              List<Post> post=snapShot.data;
+              return ListView.builder(itemBuilder: (context,position){
+                return Card(
+                  child: _drawSingleRow(post[position]),
+                );
+              },
+                itemCount: post.length,
+              );
+            }
+            break;
+        }
+
+      },
+
     );
 
   }
 
-  Widget _drawSingleRow() {
+  Widget _drawSingleRow( Post post) {
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Row(
@@ -28,7 +63,7 @@ class _popularpagecontentState extends State<popularpagecontent> {
             height: 125,
             decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: ExactAssetImage('assets/images/Bac.JPG'),
+                  image: NetworkImage(post.featuredImage),
                   fit: BoxFit.cover,
                 )),
             child: Column(
@@ -52,7 +87,7 @@ class _popularpagecontentState extends State<popularpagecontent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  'The World Global warnning Annual Summit',
+                  post.title,
                   maxLines: 2,
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
@@ -66,7 +101,7 @@ class _popularpagecontentState extends State<popularpagecontent> {
                     Row(
                       children: <Widget>[
                         Icon(Icons.timer),
-                        Text('15 Min'),
+                        Text(parseHumanDateTime(post.dateWritten)),
                       ],
                     )
                   ],
